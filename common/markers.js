@@ -23,10 +23,11 @@ export function createMarkers(viewer, points = [], opt = {}) {
                 label: {
                     text: p.text ?? p.name ?? "",
                     pixelOffset: new Cesium.Cartesian2(0, -18),
-                    font: '14px sans-serif',
+                    font: `bold ${px(18)} sans-serif`,
+                    style: Cesium.LabelStyle.FILL_AND_OUTLINE,
                     fillColor: Cesium.Color.WHITE,
                     outlineColor: Cesium.Color.BLACK,
-                    outlineWidth: 2,
+                    outlineWidth: Math.max(2, Math.round(3 * uiScale)),
                     style: Cesium.LabelStyle.FILL_AND_OUTLINE
                 },
                 polyline: opt.leaderLine ? {
@@ -35,7 +36,7 @@ export function createMarkers(viewer, points = [], opt = {}) {
                         p.lon, p.lat, terrainHeight
                     ]),
                     width: 2,
-                    material: Cesium.Color.WHITE.withAlpha(0.8)
+                    material: Cesium.Color.BLUE.withAlpha(0.8)
                 } : undefined,
                 show: opt.show !== false
             });
