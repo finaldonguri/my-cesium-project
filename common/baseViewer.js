@@ -1,6 +1,6 @@
 // /common/baseViewer.js
 export function initViewer({ ionToken } = {}) {
-    if (ionToken) Cesium.Ion.defaultAccessToken = ionToken;
+    if (ionToken) Cesium.Ion.defaultAccessToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiIyOGRiZmY3Yy0wNzRjLTQ2MjktOGQ0Ni0xYmI5MzFmNDUxZDAiLCJpZCI6MzU0MDY0LCJpYXQiOjE3NjE0NTQ3MDh9.p9q4yTuNNbVz7U09nx04n-LQG0sxXh8TDw22H3FSIV0";
 
     const viewer = new Cesium.Viewer("cesiumContainer", {
         baseLayerPicker: false,

@@ -7,7 +7,11 @@ export function setupBaseLayers(viewer, { satelliteIonAssetId = null, oldMapUrl 
     const gsi = layers.addImageryProvider(
         new Cesium.UrlTemplateImageryProvider({
             url: "https://cyberjapandata.gsi.go.jp/xyz/std/{z}/{x}/{y}.png",
-            credit: "GSI"
+            credit: new Cesium.Credit(
+                '<a href="https://maps.gsi.go.jp/development/ichiran.html" target="_blank">地理院タイル</a>'
+            ),
+            minimumLevel: 2,
+            maximumLevel: 18,
         })
     );
 
@@ -15,8 +19,7 @@ export function setupBaseLayers(viewer, { satelliteIonAssetId = null, oldMapUrl 
     let sat;
     if (satelliteIonAssetId) {
         sat = layers.addImageryProvider(
-            new Cesium.IonImageryProvider({ assetId: satelliteIonAssetId })
-        );
+            new Cesium.IonImageryProvider.fromAssetId(3830183));
         sat.show = false;
     }
 
@@ -25,8 +28,10 @@ export function setupBaseLayers(viewer, { satelliteIonAssetId = null, oldMapUrl 
     if (oldMapUrl) {
         old = layers.addImageryProvider(
             new Cesium.UrlTemplateImageryProvider({
-                url: oldMapUrl,
-                credit: "Old map"
+                url: "https://mapwarper.h-gis.jp/maps/tile/845/{z}/{x}/{y}.png", // 熊川
+                credit: new Cesium.Credit('『熊川』五万分一地形圖, 明治26年測図/大正9年修正, https://purl.stanford.edu/cb173fj2995'),
+                    minimumLevel: 2,
+                    maximumLevel: 18,
             })
         );
         old.show = false;
@@ -40,6 +45,6 @@ export function setupBaseLayers(viewer, { satelliteIonAssetId = null, oldMapUrl 
     }
 
     // 既定は地理院
-    activate("gsi");
+    activate("sat");
     return { gsi, sat, old, activate };
 }
