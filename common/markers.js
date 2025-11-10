@@ -3,7 +3,7 @@ export function createMarkers(viewer, points = [], opt = {}) {
     const out = [];
     for (const p of points) {
         const height = p.height ?? 0;
-        const lift = p.lift ?? 100;
+        const lift = p.lift ?? 0;
         const totalHeight = height + lift;
 
         const ent = viewer.entities.add({
