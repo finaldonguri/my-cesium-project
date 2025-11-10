@@ -1,59 +1,89 @@
 // /common/layers.js
-// 地理院 / 衛星 / 古地図を読み込んで、どれを表示するか切り替えできるようにする
+// ベースレイヤ（地理院 / 衛星 / 古地図 / Google 予備）を追加し、表示切替APIを返す。
+// main.js 側からは named import:  import { loadLayers } from "./common/layers.js";
+
 export async function loadLayers(viewer, opts = {}) {
-    const { gsi = true, satellite = true, oldmap = true, google = false } = opts;
+    const {
+        enable = { gsi: true, satellite: true, oldmap: true, google: false },
+        ion = { satellite: 3830183 }, // ←あなたの環境の assetId に合わせて変更
+        urls = {
+            oldmap: "https://mapwarper.h-gis.jp/maps/tile/845/{z}/{x}/{y}.png", // 例: 熊川
+            google: null, // 使うならテンプレURLを置く
+        },
+        initial = "gsi", // 初期表示にするキー（"gsi" | "satellite" | "oldmap" | "google"）
+    } = opts;
 
     const layers = viewer.imageryLayers;
-    const added = {};
+    const list = {}; // { key: ImageryLayer }
 
-    function hideAll() {
-        Object.values(added).forEach((l) => l && (l.show = false));
-    }
-
-    // 地理院タイル（標準）
-    if (gsi) {
+    // --- 地理院（標準地図） ---
+    if (enable.gsi) {
         const gsiProvider = new Cesium.UrlTemplateImageryProvider({
             url: "https://cyberjapandata.gsi.go.jp/xyz/std/{z}/{x}/{y}.png",
+            minimumLevel: 2,
+            maximumLevel: 18,
             credit: new Cesium.Credit(
                 '<a href="https://maps.gsi.go.jp/development/ichiran.html" target="_blank">地理院タイル</a>'
             ),
-            minimumLevel: 2,
-            maximumLevel: 18,
         });
-        added.gsi = layers.addImageryProvider(gsiProvider);
+        const gsi = layers.addImageryProvider(gsiProvider);
+        gsi.show = false; // 後で initial を反映
+        list.gsi = gsi;
     }
 
-    // 衛星（Cesium ion: Google 2D Satellite with Labels）
-    if (satellite) {
-        const satProvider = await Cesium.IonImageryProvider.fromAssetId(3830183);
-        added.satellite = layers.addImageryProvider(satProvider);
-        added.satellite.show = false;
+    // --- 衛星（Cesium ion の 2D Satellite 等） ---
+    if (enable.satellite && ion.satellite) {
+        const satProvider = await Cesium.IonImageryProvider.fromAssetId(ion.satellite);
+        const sat = layers.addImageryProvider(satProvider);
+        sat.show = false;
+        list.satellite = sat;
     }
 
-    // 古地図（例）
-    if (oldmap) {
+    // --- 古地図（任意のタイルURL） ---
+    if (enable.oldmap && urls.oldmap) {
         const oldProvider = new Cesium.UrlTemplateImageryProvider({
-            url: "https://mapwarper.h-gis.jp/maps/tile/845/{z}/{x}/{y}.png",
-            credit: new Cesium.Credit("Old map"),
+            url: urls.oldmap,
             minimumLevel: 2,
             maximumLevel: 18,
+            credit: new Cesium.Credit("Old Map Tiles"),
         });
-        added.oldmap = layers.addImageryProvider(oldProvider);
-        added.oldmap.show = false;
+        const old = layers.addImageryProvider(oldProvider);
+        old.show = false;
+        list.oldmap = old;
     }
 
-    // 追加予定の Google Road 等（必要になったら実装）
-    if (google) {
-        // ここに必要な Provider を追加
+    // --- Google 系（将来用のプレースホルダ） ---
+    if (enable.google && urls.google) {
+        const gProvider = new Cesium.UrlTemplateImageryProvider({
+            url: urls.google,
+            credit: new Cesium.Credit("Google"),
+        });
+        const g = layers.addImageryProvider(gProvider);
+        g.show = false;
+        list.google = g;
     }
 
+    // 表示切替API
     function activate(name) {
-        hideAll();
-        if (added[name]) added[name].show = true;
+        Object.entries(list).forEach(([key, layer]) => {
+            layer.show = (key === name);
+        });
+        return name;
     }
 
-    // 既定は地理院
-    activate("gsi");
+    // 初期表示
+    if (list[initial]) {
+        activate(initial);
+    } else {
+        // initial が存在しない場合は先頭を表示
+        const firstKey = Object.keys(list)[0];
+        if (firstKey) activate(firstKey);
+    }
 
-    return { ...added, activate };
+    // UI から参照しやすい形で返す
+    return {
+        list,          // { gsi?: ImageryLayer, satellite?: ImageryLayer, oldmap?: ImageryLayer, ... }
+        keys: Object.keys(list), // ["gsi", "satellite", "oldmap", ...]
+        activate,      // (name: string) => string
+    };
 }
