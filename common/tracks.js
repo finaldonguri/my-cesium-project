@@ -3,23 +3,19 @@
 // ==========================
 // 線A（地表追従の赤い点線）
 // ==========================
-export function createLineA(viewer, positionsDegrees, options = {}) {
+export function createLineA(viewer, coords, opt = {}) {
     const entity = viewer.entities.add({
-        id: "lineA",
-        name: "LineA",
         polyline: {
-            positions: Cesium.Cartesian3.fromDegreesArray(positionsDegrees),
-            width: options.width ?? 4,
-            clampToGround: true,
+            positions: Cesium.Cartesian3.fromDegreesArrayHeights(coords.flat()),
+            width: 3,
             material: new Cesium.PolylineDashMaterialProperty({
-                color: Cesium.Color.RED,
-                dashLength: 20
-            })
+                color: Cesium.Color.RED
+            }),
+            clampToGround: true
         },
-        show: true
+        show: opt.show !== false
     });
-
-    return entity;
+    return entity; // ← 返す
 }
 
 
@@ -27,20 +23,16 @@ export function createLineA(viewer, positionsDegrees, options = {}) {
 // ==========================
 // 線B（空中の黄色透明矢印）
 // ==========================
-export function createLineB(viewer, positionsDegHeight, options = {}) {
-    const entity = viewer.entities.add({
-        id: "lineB",
-        name: "LineB",
-        polyline: {
-            positions: Cesium.Cartesian3.fromDegreesArrayHeights(positionsDegHeight),
-            width: options.width ?? 6,
-            clampToGround: false,
-            material: new Cesium.PolylineArrowMaterialProperty(
-                Cesium.Color.YELLOW.withAlpha(0.7)
-            )
-        },
-        show: true
-    });
 
-    return entity;
+export function createLineB(viewer, coords, opt = {}) {
+    const entity = viewer.entities.add({
+        polyline: {
+            positions: Cesium.Cartesian3.fromDegreesArrayHeights(coords.flat()),
+            width: 6,
+            material: Cesium.Color.YELLOW.withAlpha(0.7),
+            clampToGround: !!opt.clampToGround
+        },
+        show: opt.show !== false
+    });
+    return entity; // ← 返す
 }

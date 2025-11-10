@@ -2,10 +2,10 @@
 import { createLineA, createLineB } from "../common/tracks.js";
 import { createMarkers } from "../common/markers.js";
 
-export default async function build(viewer) {
+export default async function buildKurihan(viewer) {
 
     // ------ kurihan 線A（lon,lat の並び） ------
-    const lineA = createLineA(viewer, 
+    const coordsA = [ 
         135.97661048267534, 35.36482341576319,
         135.97679996825266, 35.36382759910151,
         135.97890536355646, 35.36310648281633,
@@ -66,11 +66,11 @@ export default async function build(viewer) {
         136.0398986655071, 35.40565848136188,
         136.04328835194625, 35.40833546831901,
         136.0443199956451, 35.409450853310375,
-        136.0457937723577, 35.408060909645996, 
-        { show: true });
+        136.0457937723577, 35.408060909645996
+    ];
 
     // ------ kurihan 線B（lon,lat,height の並び） ------
-    const lineB = createLineB(viewer,
+    const coordsB = [
         135.979684359818748, 35.36225658749678, 800,
         135.980408369168231, 35.361933154084859, 800,
         135.98113787574701, 35.361622318337858, 800,
@@ -190,11 +190,19 @@ export default async function build(viewer) {
         136.044450356159984, 35.404371134162467, 800,
         136.044434674960002, 35.40516394738767, 800,
         136.044405254477255, 35.405956369715277, 800,
-        136.044362103551066, 35.406748163064364, 800, 
-        { show: true, clampToGround: false });
+        136.044362103551066, 35.406748163064364, 800
+    ];
+
+    const lineA = createLineA(viewer, coordsA, {
+        show: true, dashed: true
+    });
+
+    const lineB = createLineB(viewer, coordsB, {
+        show: true, clampToGround: false, arrow: true
+    });
 
     // ------ ポイント ------
-    const points = createMarkers(viewer, [
+    const points = [
         { lon: 135.979569, lat: 35.363215, lift: 150, text: "上古賀" },
         { lon: 135.992452, lat: 35.358096, lift: 150, text: "下古賀" },
         { lon: 135.999059, lat: 35.346819, lift: 150, text: "南古賀" },
@@ -209,19 +217,10 @@ export default async function build(viewer) {
         { lon: 136.020389, lat: 35.343009, lift: 150, text: "十八川" },
         { lon: 136.008685, lat: 35.344818, lift: 150, text: "庄堺" },
         { lon: 136.033106, lat: 35.386475, lift: 150, text: "木津" },
-        { lon: 136.043913, lat: 35.409439, lift: 150, text: "濱分" }]);
-    return { lineA, lineB, points };
-}
-
-    // 線A・線Bを登録
-    createLineA(viewer, LINE_A);
-    createLineB(viewer, LINE_B);
-
-    // ポイント登録（引出線とラベルが付く）
-    createMarkers(viewer, POINTS);
-
-    // 初期視点（第一地点）
-    viewer.camera.flyTo({
-        destination: Cesium.Cartesian3.fromDegrees(135.97661048267534, 35.36482341576319, 2000),
+        { lon: 136.043913, lat: 35.409439, lift: 150, text: "濱分" }];
+    const markers = createMarkers(viewer, points, {
+        leaderLine: true, show: true
     });
-
+    // ここで "viewer is not defined" を出さないため、必ずこの関数の中だけで viewer を使う
+    return { lineA, lineB, markers };
+}

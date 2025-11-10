@@ -1,6 +1,7 @@
 // ==== Ionトークン ====
 Cesium.Ion.defaultAccessToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiIyOGRiZmY3Yy0wNzRjLTQ2MjktOGQ0Ni0xYmI5MzFmNDUxZDAiLCJpZCI6MzU0MDY0LCJpYXQiOjE3NjE0NTQ3MDh9.p9q4yTuNNbVz7U09nx04n-LQG0sxXh8TDw22H3FSIV0";
 
+// ==== 共通 ====
 import { initViewer } from "./common/baseViewer.js";
 import { loadLayers } from "./common/layers.js";
 import { setupUI } from "./common/ui.js";
@@ -12,20 +13,17 @@ const modulePath = `./maps/map_${mapKey}.js`;
 (async () => {
     const viewer = initViewer({});
 
-    // ベースレイヤ読み込み（ボタン生成のためハンドルを受け取る）
+    // ベースレイヤ
     const layers = await loadLayers(viewer, {
         gsi: true, satellite: true, oldmap: true, google: false
     });
 
-    // map_xxx.js は “default async function build(viewer){...return {lineA,lineB,points};}”
-    const { default: build } = await import(modulePath);
-    const built = (typeof build === "function") ? await build(viewer) : {};
+    // 地図モジュールを動的 import
+    const mod = await import(modulePath);
+    const built = (typeof mod.default === "function")
+        ? await mod.default(viewer)   // ← ここで線/ポイント等を作る
+        : {};
 
-    // 受け取りの安全化（未返却でも落ちないように）
-    const lineA = built?.lineA ?? null;
-    const lineB = built?.lineB ?? null;
-    const points = built?.points ?? [];
-
-    // ここで各種ボタンを出す（レイヤ切替／線A・線Bトグル／ポイント表示）
-    setupUI(viewer, { layers, lineA, lineB, points });
+    // UI（レイヤ切替・線A/B・ポイントのトグル）
+    setupUI(viewer, { layers, built });
 })();
