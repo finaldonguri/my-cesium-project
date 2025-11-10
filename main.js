@@ -1,50 +1,31 @@
-// ================= Ion トークン ==================
-Cesium.Ion.defaultAccessToken =
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiIyOGRiZmY3Yy0wNzRjLTQ2MjktOGQ0Ni0xYmI5MzFmNDUxZDAiLCJpZCI6MzU0MDY0LCJpYXQiOjE3NjE0NTQ3MDh9.p9q4yTuNNbVz7U09nx04n-LQG0sxXh8TDw22H3FSIV0";
+// ==== Ionトークン ====
+Cesium.Ion.defaultAccessToken = "＜あなたのトークン＞";
 
-// ================= 共通モジュール =================
 import { initViewer } from "./common/baseViewer.js";
 import { loadLayers } from "./common/layers.js";
 import { setupUI } from "./common/ui.js";
 
-// ================= map_* の自動読み込み ================
 const params = new URLSearchParams(location.search);
-const mapKey = params.get("map") || "kurihan";          // 例 ?map=milkstone
+const mapKey = params.get("map") || "kurihan";
 const modulePath = `./maps/map_${mapKey}.js`;
 
-(async function () {
-    // ------------------- Viewer 初期化 -------------------
+(async () => {
     const viewer = initViewer({});
 
-    // ------------------- ベースレイヤ --------------------
-    const layersCtl = await loadLayers(viewer, {
-        gsi: true,
-        satellite: true,
-        oldmap: true,
+    // ベースレイヤ読み込み（ボタン生成のためハンドルを受け取る）
+    const layers = await loadLayers(viewer, {
+        gsi: true, satellite: true, oldmap: true, google: false
     });
 
-    // UI があとで使えるように viewer に保存
-    viewer.__layersCtl = layersCtl;
+    // map_xxx.js は “default async function build(viewer){...return {lineA,lineB,points};}”
+    const { default: build } = await import(modulePath);
+    const built = (typeof build === "function") ? await build(viewer) : {};
 
-    // ------------------- map_* 読み込み -------------------
-    const mod = await import(modulePath);
+    // 受け取りの安全化（未返却でも落ちないように）
+    const lineA = built?.lineA ?? null;
+    const lineB = built?.lineB ?? null;
+    const points = built?.points ?? [];
 
-    // map_kurihan.js が返す値を受け取る（線A/B + マーカー）
-    // 例: return { lineA, lineB, markers }
-    const built = (typeof mod.default === "function")
-        ? await mod.default(viewer)
-        : {};
-
-    // built.lineA, built.lineB, built.markers を UI に渡す
-    const app = {
-        viewer,
-        layers: layersCtl,
-        lineA: built.lineA || null,
-        lineB: built.lineB || null,
-        markers: built.markers || [],
-    };
-
-    // ------------------- UI セットアップ -------------------
-    setupUI(viewer, app);
-
+    // ここで各種ボタンを出す（レイヤ切替／線A・線Bトグル／ポイント表示）
+    setupUI(viewer, { layers, lineA, lineB, points });
 })();

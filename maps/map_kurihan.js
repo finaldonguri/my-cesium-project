@@ -5,7 +5,7 @@ import { createMarkers } from "../common/markers.js";
 export default async function build(viewer) {
 
     // ------ kurihan 線A（lon,lat の並び） ------
-    const LINE_A = [
+    const lineA = createLineA(viewer, 
         135.97661048267534, 35.36482341576319,
         135.97679996825266, 35.36382759910151,
         135.97890536355646, 35.36310648281633,
@@ -66,11 +66,11 @@ export default async function build(viewer) {
         136.0398986655071, 35.40565848136188,
         136.04328835194625, 35.40833546831901,
         136.0443199956451, 35.409450853310375,
-        136.0457937723577, 35.408060909645996,
-    ];
+        136.0457937723577, 35.408060909645996, 
+        { show: true });
 
     // ------ kurihan 線B（lon,lat,height の並び） ------
-    const LINE_B = [
+    const lineB = createLineB(viewer,
         135.979684359818748, 35.36225658749678, 800,
         135.980408369168231, 35.361933154084859, 800,
         135.98113787574701, 35.361622318337858, 800,
@@ -190,12 +190,11 @@ export default async function build(viewer) {
         136.044450356159984, 35.404371134162467, 800,
         136.044434674960002, 35.40516394738767, 800,
         136.044405254477255, 35.405956369715277, 800,
-        136.044362103551066, 35.406748163064364, 800,
-
-    ];
+        136.044362103551066, 35.406748163064364, 800, 
+        { show: true, clampToGround: false });
 
     // ------ ポイント ------
-    const POINTS = [
+    const points = createMarkers(viewer, [
         { lon: 135.979569, lat: 35.363215, lift: 150, text: "上古賀" },
         { lon: 135.992452, lat: 35.358096, lift: 150, text: "下古賀" },
         { lon: 135.999059, lat: 35.346819, lift: 150, text: "南古賀" },
@@ -210,8 +209,9 @@ export default async function build(viewer) {
         { lon: 136.020389, lat: 35.343009, lift: 150, text: "十八川" },
         { lon: 136.008685, lat: 35.344818, lift: 150, text: "庄堺" },
         { lon: 136.033106, lat: 35.386475, lift: 150, text: "木津" },
-        { lon: 136.043913, lat: 35.409439, lift: 150, text: "濱分" },
-    ];
+        { lon: 136.043913, lat: 35.409439, lift: 150, text: "濱分" }]);
+    return { lineA, lineB, points };
+}
 
     // 線A・線Bを登録
     createLineA(viewer, LINE_A);
@@ -224,4 +224,4 @@ export default async function build(viewer) {
     viewer.camera.flyTo({
         destination: Cesium.Cartesian3.fromDegrees(135.97661048267534, 35.36482341576319, 2000),
     });
-}
+
