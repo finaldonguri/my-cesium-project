@@ -1,41 +1,38 @@
 // /common/tracks.js
-// 線A：赤点線、地表追従（toggle可能）
-export function createLineA(viewer, positionsDegrees, { show = true } = {}) {
-    if (!positionsDegrees?.length) return null;
 
-    const positions = Cesium.Cartesian3.fromDegreesArray(positionsDegrees);
+export function createLineA(viewer, positionsDegrees, options = {}) {
     const entity = viewer.entities.add({
+        id: "lineA",
         name: "LineA",
         polyline: {
-            positions,
-            width: 3,
+            positions: Cesium.Cartesian3.fromDegreesArray(positionsDegrees),
+            width: 4,
             material: new Cesium.PolylineDashMaterialProperty({
                 color: Cesium.Color.RED,
-                dashLength: 16
+                dashLength: 12
             }),
             clampToGround: true
         },
-        show
+        show: true
     });
+    viewer.__lineA = entity;
     return entity;
 }
 
-// 線B：黄色半透明の空中矢印（地形追従しない）
-export function createLineB(viewer, positionsDegrees, { show = true, width = 6, alpha = 0.6 } = {}) {
-    if (!positionsDegrees?.length) return null;
-
-    const positions = Cesium.Cartesian3.fromDegreesArrayHeights(positionsDegrees);
+export function createLineB(viewer, positionsDegHeight, options = {}) {
     const entity = viewer.entities.add({
+        id: "lineB",
         name: "LineB",
         polyline: {
-            positions,
-            width,
+            positions: Cesium.Cartesian3.fromDegreesArrayHeights(positionsDegHeight),
+            width: 6,
             material: new Cesium.PolylineArrowMaterialProperty(
-                Cesium.Color.YELLOW.withAlpha(alpha)
+                Cesium.Color.YELLOW.withAlpha(0.7)
             ),
             clampToGround: false
         },
-        show
+        show: true
     });
+    viewer.__lineB = entity;
     return entity;
 }
