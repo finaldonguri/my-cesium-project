@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="ja">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>my-cesium-project</title>
+
+    <!-- Cesium -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cesium/Build/Cesium/Widgets/widgets.css">
+    <script src="https://cdn.jsdelivr.net/npm/cesium/Build/Cesium/Cesium.js"></script>
+
+    <!-- あなたの共通スタイル -->
+    <link rel="stylesheet" href="./style.css">
+    <link rel="icon" href="./favicon.ico">
+</head>
+
+<body>
+    <div id="toolbar"></div>
+    <div id="cesiumContainer" class="full"></div>
+
+    <!-- 入口（どの地図を出すかはURLの ?map=xxx で切替）-->
+    <script type="module" src="./main.js"></script>
+</body>
+
+</html>
