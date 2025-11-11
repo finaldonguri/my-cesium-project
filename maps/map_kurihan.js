@@ -220,9 +220,13 @@ export default async function buildKurihan(viewer) {
         { lon: 136.043913, lat: 35.409439, lift: 150, text: "浜分" }
     ];
 
+    // 引出線は常に地形表面から出す（fromSurface）＋表示オン
     const markers = createMarkers(viewer, points, {
-        leaderLine: true, show: true
+        leaderLine: true,
+        show: true
     });
 
+    // 読み込み後に全ポイント（ラインA/B＋マーカー）が画角に入るように
+    await viewer.zoomTo([lineA, lineB, ...markers]);
     return { lineA, lineB, markers };
 }
