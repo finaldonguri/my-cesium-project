@@ -2,56 +2,115 @@
 import { createLineA, createLineB } from "../common/tracks.js";
 import { createMarkers } from "../common/markers.js";
 
-// 軽い矩形算出（同期）
+// ===== 安全モード：まずは EllipsoidTerrain で軽く表示 =====
+const SAFE_MODE = true;
+
+// 矩形作成（[lon,lat,...]）
 function rectangleFromLonLatArray(arr, padDeg = 0.01) {
     let w = 180, e = -180, s = 90, n = -90;
     for (let i = 0; i < arr.length; i += 2) {
         const lon = arr[i], lat = arr[i + 1];
-        if (lon < w) w = lon; if (lon > e) e = lon;
-        if (lat < s) s = lat; if (lat > n) n = lat;
+        if (lon < w) w = lon;
+        if (lon > e) e = lon;
+        if (lat < s) s = lat;
+        if (lat > n) n = lat;
     }
     return Cesium.Rectangle.fromDegrees(w - padDeg, s - padDeg, e + padDeg, n + padDeg);
 }
 
 export default async function buildKurihan(viewer) {
-    // ===== 線A / 線B（原文そのまま） =====
-    const coordsA = [/* …あなたのcoordsA…（省略）*/
+    // ---- 線A（原文どおり） ----
+    const coordsA = [
         135.97661048267534, 35.36482341576319,
-        /* 中略 */
+        135.97679996825266, 35.36382759910151,
+        135.97890536355646, 35.36310648281633,
+        135.97913695703988, 35.362144984416524,
+        135.98130551420277, 35.36180158935581,
+        135.9829898304458, 35.36059969514149,
+        135.98608476154237, 35.35939778303565,
+        135.98962182565276, 35.358813990700185,
+        135.99124298003665, 35.35816151191858,
+        135.98890599124945, 35.35292432018871,
+        135.9893691782163, 35.352769774945934,
+        135.98823226475224, 35.35010811602774,
+        135.99317994371614, 35.347669616032995,
+        135.99682227759166, 35.34643316537488,
+        135.9976223278071, 35.34667358781837,
+        135.99804340686785, 35.34665641481042,
+        135.99854870174076, 35.34730898654601,
+        136.00238052119363, 35.34698270133717,
+        136.00865459919893, 35.34562602765274,
+        136.00966518894475, 35.34480170846408,
+        136.01120212751647, 35.34475018823551,
+        136.01259168841698, 35.345763413366434,
+        136.01587610509094, 35.345368428809813,
+        136.02069746033658, 35.34425215766549,
+        136.02012900360455, 35.34311869733738,
+        136.02073956824268, 35.3452825623463,
+        136.02153961845812, 35.345969491498906,
+        136.02217123704924, 35.34741202370657,
+        136.02358185190278, 35.34758375201545,
+        136.0242134704939, 35.34863128679389,
+        136.02572935511262, 35.34919798027394,
+        136.026508351375, 35.3494040496446,
+        136.02690837648274, 35.35167077802412,
+        136.02747683321474, 35.352271793818595,
+        136.02949801270637, 35.3589856947664,
+        136.0300033075793, 35.35919173916392,
+        136.03023490106267, 35.360273463624686,
+        136.03002436153236, 35.36035931415163,
+        136.0325087279908, 35.36726139780711,
+        136.03341404797146, 35.36980231481287,
+        136.0323824042726, 35.37163927931583,
+        136.0323402963665, 35.37694392340082,
+        136.0332666703002, 35.38020550553897,
+        136.03280348333337, 35.38223105334142,
+        136.03351931773665, 35.38648797110119,
+        136.0351194181675, 35.386590958263845,
+        136.0337930191261, 35.38909693869335,
+        136.0337930191261, 35.392272213020235,
+        136.03425620609298, 35.39498396995367,
+        136.03514047212056, 35.39743820299364,
+        136.03629843953766, 35.39989236133399,
+        136.0366563567393, 35.40056166428032,
+        136.0360457921012, 35.40171147944664,
+        136.0373721911426, 35.401883092244105,
+        136.03796170182764, 35.40262102311042,
+        136.03838278088838, 35.4031015326014,
+        136.03916177715078, 35.40454304388949,
+        136.0398986655071, 35.40565848136188,
+        136.04328835194625, 35.40833546831901,
+        136.0443199956451, 35.409450853310375,
         136.0457937723577, 35.408060909645996
     ];
-    const coordsB = [/* …あなたのcoordsB…（省略）*/
+
+    // ---- 線B（原文どおり：lon,lat,h の並び） ----
+    const coordsB = [
         135.979684359818748, 35.36225658749678, 800,
-        /* 中略 */
+        // （中略）あなたのcoordsBをそのまま
         136.044362103551066, 35.406748163064364, 800
     ];
 
-    // 0) レンダリング負荷を下げる（任意）
-    const scene = viewer.scene;
-    scene.requestRenderMode = true;        // 変更時のみ再描画
-    viewer.targetFrameRate = 30;           // 余力確保
-    scene.postProcessStages.fxaa.enabled = false; // 初回負荷軽減
-    scene.globe.enableLighting = false;
+    // 0) 安全モード：まずは平面地形に
+    if (SAFE_MODE) {
+        viewer.terrainProvider = new Cesium.EllipsoidTerrainProvider();
+    }
 
-    // 1) 先に線だけ作る（軽い）
+    // 1) 線Aだけ先に作る（軽量）
     const lineA = createLineA(viewer, coordsA, { show: true, dashed: true });
+
+    // 2) 線Aの矩形へ即飛ぶ（エンティティ準備状態に依存しない）
+    const rectA = rectangleFromLonLatArray(coordsA);
+    await new Promise(r => requestAnimationFrame(() => r()));
+    try {
+        await viewer.camera.flyTo({ destination: Cesium.Rectangle.expand(rectA, 0.02), duration: 0.0 });
+    } catch { } // 稀な中断は無視
+
+    // 3) 線B→ポイント（フレームを分けて軽く）
+    await new Promise(r => requestAnimationFrame(() => r()));
     const lineB = createLineB(viewer, coordsB, { show: true, clampToGround: false, arrow: true });
 
-    // 2) 即座に矩形へ飛ぶ（エンティティの準備状態に依存しない）
-    const rectA = rectangleFromLonLatArray(coordsA);
-    // Bは[lon,lat,h]なので、lon/latだけ抽出
-    const latsB = [];
-    for (let i = 0; i < coordsB.length; i += 3) { latsB.push(coordsB[i], coordsB[i + 1]); }
-    const rectB = rectangleFromLonLatArray(latsB);
-    const union = Cesium.Rectangle.union(rectA, rectB);
-
-    // 1フレーム待ってから飛ぶとさらに安定
     await new Promise(r => requestAnimationFrame(() => r()));
-    await viewer.camera.flyTo({ destination: Cesium.Rectangle.expand(union, 0.02) });
-
-    // 3) もう1フレーム置いて「軽い生成」→ その後“ゆるく”高さ補正（markers.js内で遅延）
-    await new Promise(r => requestAnimationFrame(() => r()));
-
     const points = [
         { lon: 135.979569, lat: 35.363215, lift: 150, text: "上古賀" },
         { lon: 135.992452, lat: 35.358096, lift: 150, text: "下古賀" },
@@ -69,16 +128,24 @@ export default async function buildKurihan(viewer) {
         { lon: 136.033106, lat: 35.386475, lift: 150, text: "木津" },
         { lon: 136.043913, lat: 35.409439, lift: 150, text: "浜分" }
     ];
-
-    // 即描画 → markers.js 内でゆっくり高さ補正
     const markers = createMarkers(viewer, points, {
         leaderLine: true,
         show: true,
         labelFontPx: 14,
-        adjustDelayMs: 1200,   // 初期表示の後で
-        adjustTimeoutMs: 1000  // 取得に時間がかかるなら諦める
+        liftDefault: 150
     });
 
-    // 4) UI用に返す
+    // 4)（任意）安定を確認したら、後から WorldTerrain に切替するコード
+    //    SAFE_MODE を false にして試す or 下のブロックを有効化して遅延切替
+    /*
+    setTimeout(async () => {
+      try {
+        viewer.terrainProvider = await Cesium.CesiumTerrainProvider.fromIonAssetId(1);
+      } catch (e) {
+        console.warn("WorldTerrain切替失敗:", e);
+      }
+    }, 4000);
+    */
+
     return { lineA, lineB, markers };
 }
