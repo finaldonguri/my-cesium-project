@@ -35,7 +35,7 @@ export function createMarkers(viewer, points = [], opt = {}) {
                         p.lon, p.lat, terrainHeight
                     ]),
                     width: 2,
-                    material: Cesium.Color.BLUE.withAlpha(0.8)
+                    material: Cesium.Color.WHITE.withAlpha(0.8)
                 } : undefined,
                 show: opt.show !== false
             });
