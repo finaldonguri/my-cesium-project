@@ -1,40 +1,31 @@
 // /common/markers.js
-// ・地形サンプルは失敗しても高さ0で続行（初回ブラウザ対策）
-// ・disableDepthTestDistance でラベルを埋もれさせない
-// ・戻り値は必ず Entity[]（await必須）
+// すぐ出す（地形サンプルなし）→ 1.5秒後に地形が用意できていれば高さだけ更新。
+// ・初回でも固まらない（非ブロッキング）
+// ・ラベルは disableDepthTestDistance で埋もれない
+// ・戻り値: 作成した Entity[]（同期的に返す）＋内部で後から高さ補正
 
-export async function createMarkers(viewer, points = [], opt = {}) {
+export function createMarkers(viewer, points = [], opt = {}) {
     const {
         leaderLine = true,
         show = true,
         labelFontPx = 14,
+        liftDefault = 0,
+        adjustDelayMs = 1500,       // 初回描画を優先してから高さ調整
+        adjustTimeoutMs = 1200      // サンプル取得の上限時間（固まらないため）
     } = opt;
 
     if (!viewer || !viewer.entities) return [];
 
-    // 1) 地形サンプル（失敗しても続行）
-    const cartos = points.map(p => Cesium.Cartographic.fromDegrees(p.lon, p.lat));
-    try {
-        if (cartos.length > 0) {
-            // terrainProvider が未readyでも API は投げられるが、失敗することがある
-            await Cesium.sampleTerrainMostDetailed(viewer.terrainProvider, cartos);
-        }
-    } catch (e) {
-        // 初回ロードで terrain が差し替わる前に叩くと失敗しがち
-        console.warn("sampleTerrainMostDetailed failed; fallback to height=0", e);
-    }
+    const ents = [];
 
-    const out = [];
-
-    for (let i = 0; i < points.length; i++) {
-        const p = points[i];
-        const c = cartos[i];
-        const terrainHeight = (c && Number.isFinite(c.height)) ? c.height : 0;
-        const lift = p.lift ?? 0;
-        const totalHeight = terrainHeight + lift;
+    // 1) まずは「地形サンプルなし」で即描画
+    for (const p of points) {
+        const lift = p.lift ?? liftDefault;
+        const groundH = 0;
+        const totalH = groundH + lift;
 
         const ent = viewer.entities.add({
-            position: Cesium.Cartesian3.fromDegrees(p.lon, p.lat, totalHeight),
+            position: Cesium.Cartesian3.fromDegrees(p.lon, p.lat, totalH),
             point: {
                 pixelSize: p.pixelSize ?? 10,
                 color: p.pointColor ?? Cesium.Color.RED,
@@ -52,25 +43,72 @@ export async function createMarkers(viewer, points = [], opt = {}) {
                 disableDepthTestDistance: Number.POSITIVE_INFINITY,
                 scaleByDistance: new Cesium.NearFarScalar(200, 1.0, 2000000, 0.6),
             },
-            show,
+            show
         });
 
         if (leaderLine) {
-            const linePositions = Cesium.Cartesian3.fromDegreesArrayHeights([
-                p.lon, p.lat, terrainHeight,   // 地面（または0）
-                p.lon, p.lat, totalHeight      // 持ち上げ後の点
-            ]);
             ent.polyline = new Cesium.PolylineGraphics({
-                positions: linePositions,
+                positions: Cesium.Cartesian3.fromDegreesArrayHeights([
+                    p.lon, p.lat, 0,        // 地面（仮0）
+                    p.lon, p.lat, totalH    // 点
+                ]),
                 width: p.leaderWidth ?? 2,
                 material: (p.leaderColor ?? Cesium.Color.WHITE.withAlpha(0.8)),
                 clampToGround: false,
             });
         }
-
-        out.push(ent);
+        ents.push(ent);
     }
 
-    return out;
-    
+    // 2) 初回描画後に「ベストエフォート」で高さ補正（非ブロッキング）
+    //    - 失敗してもそのまま運用（見た目は lift で持ち上がっているので致命的ではない）
+    if (points.length > 0) {
+        setTimeout(async () => {
+            // 1フレーム待って描画を確実に済ませる
+            await new Promise(r => requestAnimationFrame(() => r()));
+
+            // タイムアウト付きで sampleTerrainMostDetailed を実行
+            const cartos = points.map(p => Cesium.Cartographic.fromDegrees(p.lon, p.lat));
+            const sampler = (async () => {
+                try {
+                    await Cesium.sampleTerrainMostDetailed(viewer.terrainProvider, cartos);
+                    return cartos.map(c => (Number.isFinite(c.height) ? c.height : 0));
+                } catch {
+                    return null;
+                }
+            })();
+
+            const heights = await Promise.race([
+                sampler,
+                new Promise(resolve => setTimeout(() => resolve(null), adjustTimeoutMs))
+            ]);
+
+            if (!heights) return; // 取れなければ何もしない（ハング防止）
+
+            // 取得できたら静かに座標を更新
+            for (let i = 0; i < points.length; i++) {
+                const p = points[i];
+                const h = heights[i] ?? 0;
+                const lift = p.lift ?? liftDefault;
+                const totalH = h + lift;
+
+                const ent = ents[i];
+                if (!ent) continue;
+
+                ent.position = Cesium.Cartesian3.fromDegrees(p.lon, p.lat, totalH);
+
+                if (leaderLine && ent.polyline) {
+                    ent.polyline.positions = Cesium.Cartesian3.fromDegreesArrayHeights([
+                        p.lon, p.lat, h,
+                        p.lon, p.lat, totalH
+                    ]);
+                }
+            }
+
+            // 最後に1回だけ再描画要求（requestRenderMode対策）
+            if (viewer?.scene?.requestRender) viewer.scene.requestRender();
+        }, adjustDelayMs);
+    }
+
+    return ents;
 }
