@@ -150,4 +150,5 @@ export default async function buildKurihan(viewer) {
     await viewer.camera.flyTo({ destination: Cesium.Rectangle.expand(union, 0.02) });
 
     return { lineA, lineB, markers };
+    
 }

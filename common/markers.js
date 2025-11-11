@@ -72,4 +72,5 @@ export async function createMarkers(viewer, points = [], opt = {}) {
     }
 
     return out;
+    
 }
