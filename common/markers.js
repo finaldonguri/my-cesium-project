@@ -23,11 +23,10 @@ export function createMarkers(viewer, points = [], opt = {}) {
                 label: {
                     text: p.text ?? p.name ?? "",
                     pixelOffset: new Cesium.Cartesian2(0, -18),
-                    font: `bold ${px(18)} sans-serif`,
-                    style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+                    font: 'bold 14px sans-serif',
                     fillColor: Cesium.Color.WHITE,
                     outlineColor: Cesium.Color.BLACK,
-                    outlineWidth: Math.max(2, Math.round(3 * uiScale)),
+                    outlineWidth: 2,
                     style: Cesium.LabelStyle.FILL_AND_OUTLINE
                 },
                 polyline: opt.leaderLine ? {
