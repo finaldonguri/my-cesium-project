@@ -21,7 +21,7 @@ const modulePath = `./maps/map_${mapKey}.js`;
     // 地図モジュールを動的 import
     const mod = await import(modulePath);
     const built = (typeof mod.default === "function")
-        ? await mod.default(viewer)   // ← ここで線/ポイント等を作る
+        ? await mod.default(viewer)   // ← ここで線/ポイント等を作る（内部で zoomTo 実施）
         : {};
 
     // UI（レイヤ切替・線A/B・ポイントのトグル）

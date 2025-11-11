@@ -193,13 +193,8 @@ export default async function buildKurihan(viewer) {
         136.044362103551066, 35.406748163064364, 800
     ];
 
-    const lineA = createLineA(viewer, coordsA, {
-        show: true, dashed: true
-    });
-
-    const lineB = createLineB(viewer, coordsB, {
-        show: true, clampToGround: false, arrow: true
-    });
+    const lineA = createLineA(viewer, coordsA, { show: true, dashed: true });
+    const lineB = createLineB(viewer, coordsB, { show: true, clampToGround: false, arrow: true });
 
     // ------ ポイント ------
     const points = [
@@ -220,13 +215,15 @@ export default async function buildKurihan(viewer) {
         { lon: 136.043913, lat: 35.409439, lift: 150, text: "浜分" }
     ];
 
-    // 引出線は常に地形表面から出す（fromSurface）＋表示オン
-    const markers = createMarkers(viewer, points, {
+    // ※ createMarkers は「await」必須（ここが今回の肝）
+    const markers = await createMarkers(viewer, points, {
         leaderLine: true,
-        show: true
+        show: true,
+        labelFontPx: 14
     });
 
-    // 読み込み後に全ポイント（ラインA/B＋マーカー）が画角に入るように
+    // 線A/B＋ポイントをまとめて画角に（カメラ範囲維持を優先したいなら lineA/lineB 主体）
     await viewer.zoomTo([lineA, lineB, ...markers]);
+
     return { lineA, lineB, markers };
 }
